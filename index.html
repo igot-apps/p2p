@@ -2,626 +2,444 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>P2P · two‑sided merchant dashboard</title>
-  <!-- Font Awesome 6 (free) for clean icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-    }
-
-    body {
-      background: #f3f6fc;
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 24px 20px;
-      color: #0b1c33;
-    }
-
-    .dashboard-container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      font-size: 1.9rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      color: #0f2b3d;
-      letter-spacing: -0.01em;
-    }
-
-    h1 i {
-      color: #2f7e4b;
-    }
-
-    h2, h3 {
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    h2 i, h3 i {
-      color: #256fa0;
-    }
-
-    /* stats grid – clean and informative */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 16px;
-      margin: 24px 0 28px;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 18px 14px;
-      border-radius: 20px;
-      box-shadow: 0 6px 14px rgba(0,20,40,0.04);
-      border: 1px solid rgba(79, 114, 202, 0.08);
-      transition: 0.2s;
-    }
-
-    .stat-card:hover {
-      background: #fefefe;
-      border-color: #cbddea;
-    }
-
-    .stat-label {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #5a6e7e;
-      font-weight: 600;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .stat-number {
-      font-size: 1.8rem;
-      font-weight: 650;
-      line-height: 1.1;
-      color: #0c2e4e;
-    }
-
-    .stat-sub {
-      font-size: 0.8rem;
-      color: #42707e;
-      margin-top: 6px;
-    }
-
-    .profit-positive { color: #1e7b4b; background: #e2f0e4; padding: 2px 10px; border-radius: 40px; }
-    .profit-negative { color: #b13b3b; background: #ffe6e6; padding: 2px 10px; border-radius: 40px; }
-
-    /* two‑column layout for buy / sell */
-    .dual-panel {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 26px;
-      margin-bottom: 32px;
-    }
-
-    @media (max-width: 800px) {
-      .dual-panel {
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
-    }
-
-    .order-card {
-      background: white;
-      border-radius: 24px;
-      padding: 20px 20px 26px;
-      box-shadow: 0 10px 22px -6px rgba(0,0,0,0.04);
-      border: 1px solid #e5ecf3;
-    }
-
-    .order-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 18px;
-    }
-
-    .badge {
-      background: #ecf3fa;
-      padding: 6px 14px;
-      border-radius: 50px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #1f5f8b;
-    }
-
-    .add-form {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      background: #f9fcff;
-      padding: 14px 12px;
-      border-radius: 18px;
-      margin-bottom: 22px;
-      border: 1px solid #e2ecf5;
-    }
-
-    .add-form input {
-      padding: 12px 12px;
-      border: 1px solid #d3dfea;
-      border-radius: 14px;
-      font-size: 0.95rem;
-      width: 120px;
-      background: white;
-      transition: 0.2s;
-    }
-
-    .add-form input:focus {
-      border-color: #309b5c;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(46, 164, 79, 0.08);
-    }
-
-    .btn {
-      border: none;
-      padding: 10px 18px;
-      border-radius: 30px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      background: white;
-      transition: all 0.15s;
-      border: 1px solid transparent;
-    }
-
-    .btn-primary {
-      background: #1f8650;
-      color: white;
-      box-shadow: 0 4px 8px rgba(28, 128, 74, 0.2);
-    }
-
-    .btn-primary:hover {
-      background: #1b974a;
-      transform: scale(0.98);
-    }
-
-    .btn-outline {
-      border: 1px solid #c2d6e4;
-      background: white;
-      color: #2b4f6a;
-    }
-
-    .btn-outline:hover {
-      background: #e7f0f9;
-      border-color: #7fa1b7;
-    }
-
-    .btn-remove {
-      background: transparent;
-      color: #8f9fb1;
-      padding: 6px 10px;
-      border-radius: 40px;
-    }
-
-    .btn-remove:hover {
-      background: #fbeaec;
-      color: #c0394a;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-
-    th {
-      text-align: center;
-      padding: 12px 4px;
-      color: #4e6a7c;
-      font-weight: 600;
-      border-bottom: 1px solid #dde6ed;
-    }
-
-    td {
-      padding: 12px 4px;
-      border-bottom: 1px solid #ecf1f6;
-      text-align: center;
-      color: #1f3d4c;
-    }
-
-    .empty-row td {
-      padding: 24px;
-      color: #8499a9;
-      font-style: italic;
-    }
-
-    .total-value {
-      font-weight: 700;
-      color: #1b4e6e;
-    }
-
-    .sell-suggest-card {
-      background: linear-gradient(105deg, #f1f9f5 0%, #f6fdfa 100%);
-      border-radius: 18px;
-      padding: 20px 24px;
-      margin-top: 16px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      border: 1px solid #c8e0d1;
-    }
-
-    .profit-input-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .profit-input-group input {
-      padding: 12px 14px;
-      border-radius: 40px;
-      border: 1px solid #b9d1cf;
-      width: 100px;
-      font-weight: 600;
-    }
-
-    .suggested-price {
-      font-size: 1.7rem;
-      font-weight: 700;
-      color: #1c6b3f;
-      letter-spacing: -0.01em;
-    }
-
-    hr {
-      border: none;
-      border-top: 2px solid rgba(135, 175, 195, 0.2);
-      margin: 28px 0 10px;
-    }
-
-    .fa-solid, .fa-regular { margin-right: 2px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P USDT Trader Dashboard</title>
+    <!-- SheetJS for Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .upload-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .upload-card h2 {
+            margin-top: 0;
+            color: #34495e;
+        }
+        input[type="file"] {
+            padding: 10px;
+            border: 2px dashed #b0bec5;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            margin: 15px auto;
+            cursor: pointer;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #7f8c8d;
+        }
+        .card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .card .sub {
+            font-size: 14px;
+            color: #95a5a6;
+            margin-top: 5px;
+        }
+        .profit-positive { color: #27ae60; }
+        .profit-negative { color: #c0392b; }
+        .tables-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .table-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        .table-card h3 {
+            margin-top: 0;
+            color: #34495e;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 10px 5px;
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .text-right { text-align: right; }
+        .footer {
+            text-align: center;
+            color: #95a5a6;
+            margin-top: 30px;
+            font-size: 14px;
+        }
+        .loading {
+            display: none;
+            color: #3498db;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .error {
+            color: #c0392b;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-<div class="dashboard-container">
+<div class="container">
+    <h1>📈 P2P USDT Trader Insights</h1>
 
-  <!-- HEADER -->
-  <h1>
-    <i class="fas fa-arrows-spin"></i> P2P two‑way trading
-    <span style="font-size: 0.8rem; background: #ddecf0; padding: 6px 16px; border-radius: 50px; margin-left: 12px; font-weight: 500; color: #1e566e;">
-      <i class="fas fa-bag-shopping"></i> BUY & SELL
-    </span>
-  </h1>
-
-  <!-- COMPREHENSIVE STATS : BOTH SIDES + PROFIT -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-label"><i class="fas fa-circle-dollar"></i> total bought</div>
-      <div class="stat-number" id="totalBoughtQty">0.00</div>
-      <div class="stat-sub">USDT · cost <span id="totalCostDisplay">0.00</span></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label"><i class="fas fa-circle-up"></i> total sold</div>
-      <div class="stat-number" id="totalSoldQty">0.00</div>
-      <div class="stat-sub">USDT · revenue <span id="totalRevenueDisplay">0.00</span></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label"><i class="fas fa-scale-balanced"></i> net USDT</div>
-      <div class="stat-number" id="netQty">0.00</div>
-      <div class="stat-sub">inventory (bought - sold)</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label"><i class="fas fa-file-invoice-dollar"></i> avg buy price</div>
-      <div class="stat-number" id="avgBuyPrice">0.0000</div>
-      <div class="stat-sub">per USDT</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label"><i class="fas fa-file-invoice-dollar"></i> avg sell price</div>
-      <div class="stat-number" id="avgSellPrice">0.0000</div>
-      <div class="stat-sub">per USDT</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label"><i class="fas fa-chart-line"></i> P/L (closed)</div>
-      <div class="stat-number" id="profitLoss">0.00</div>
-      <div class="stat-sub" id="profitStatus">revenue – cost</div>
-    </div>
-  </div>
-
-  <!-- TWO SECTIONS: BUY ORDERS (left) + SELL ORDERS (right) -->
-  <div class="dual-panel">
-    
-    <!-- ********** BUY SIDE ********** -->
-    <div class="order-card">
-      <div class="order-header">
-        <h3><i class="fas fa-cart-shopping" style="color: #2e7d5e;"></i> Buy orders · open</h3>
-        <span class="badge"><i class="fas fa-coin"></i> inventory</span>
-      </div>
-
-      <!-- Add buy form -->
-      <div class="add-form">
-        <input type="number" id="buyPrice" step="0.0001" placeholder="Price (fiat)" value="1.02">
-        <input type="number" id="buyAmount" step="0.1" placeholder="Amount USDT" value="50">
-        <button class="btn btn-primary" onclick="addBuyOrder()">
-          <i class="fas fa-plus"></i> Add buy
-        </button>
-      </div>
-
-      <!-- Buy orders table -->
-      <table>
-        <thead>
-          <tr><th>Price</th><th>Amount USDT</th><th>Total (fiat)</th><th></th></tr>
-        </thead>
-        <tbody id="buyTableBody">
-          <!-- dynamic rows from JS -->
-        </tbody>
-      </table>
-      <div style="margin-top: 12px; font-size: 0.8rem; color: #4f7a8b;">
-        <i class="fas fa-info-circle"></i> Total buy value: <span id="buyTotalFiat">0.00</span>
-      </div>
+    <div class="upload-card">
+        <h2>Upload Your Order History</h2>
+        <input type="file" id="fileInput" accept=".xls, .xlsx, .csv">
+        <div class="loading" id="loading">Processing...</div>
+        <div class="error" id="error"></div>
     </div>
 
-    <!-- ********** SELL SIDE ********** -->
-    <div class="order-card">
-      <div class="order-header">
-        <h3><i class="fas fa-cart-shopping" style="color: #b1642b;"></i> Sell orders · open</h3>
-        <span class="badge"><i class="fas fa-arrow-up"></i> ads</span>
-      </div>
+    <div id="results" style="display: none;">
+        <div class="summary-grid" id="summaryCards"></div>
 
-      <!-- Add sell form -->
-      <div class="add-form">
-        <input type="number" id="sellPrice" step="0.0001" placeholder="Price (fiat)" value="1.05">
-        <input type="number" id="sellAmount" step="0.1" placeholder="Amount USDT" value="30">
-        <button class="btn btn-primary" onclick="addSellOrder()" style="background: #b4643c;">
-          <i class="fas fa-plus"></i> Add sell
-        </button>
-      </div>
+        <div class="tables-container">
+            <div class="table-card" id="buyByPriceTable"></div>
+            <div class="table-card" id="sellByPriceTable"></div>
+        </div>
 
-      <!-- Sell orders table -->
-      <table>
-        <thead>
-          <tr><th>Price</th><th>Amount USDT</th><th>Total (fiat)</th><th></th></tr>
-        </thead>
-        <tbody id="sellTableBody">
-          <!-- dynamic rows -->
-        </tbody>
-      </table>
-      <div style="margin-top: 12px; font-size: 0.8rem; color: #4f7a8b;">
-        <i class="fas fa-info-circle"></i> Total sell value: <span id="sellTotalFiat">0.00</span>
-      </div>
+        <div class="table-card" id="counterpartyTable" style="margin-bottom: 30px;"></div>
     </div>
-  </div>
 
-  <!-- PROFIT TARGET + SUGGESTED SELL (based on avg buy cost) -->
-  <div class="sell-suggest-card">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <i class="fas fa-bullseye" style="font-size: 1.6rem; color: #2b6e4b;"></i>
-      <div>
-        <span style="font-weight: 600; font-size: 1rem;">Target profit margin</span>
-        <div style="color: #3c6772; font-size: 0.8rem;">based on average buy cost</div>
-      </div>
+    <div class="footer">
+        Dashboard automatically calculates using average cost method. Only "Completed" orders are considered.
     </div>
-    <div class="profit-input-group">
-      <input type="number" id="profitPercent" step="0.1" value="0.8" min="0" style="width: 100px;" onchange="calculateAll()">
-      <span style="font-weight: 600;">%</span>
-      <button class="btn btn-outline" onclick="calculateAll()"><i class="fas fa-rotate-right"></i> apply</button>
-    </div>
-    <div style="text-align: right;">
-      <div style="font-size: 0.8rem; color: #386a5e;">suggested sell</div>
-      <span class="suggested-price" id="suggestedSellPrice">0.0000</span>
-    </div>
-  </div>
-
-  <hr>
-  <p style="text-align: right; color: #5f8694; font-size: 0.75rem; display: flex; gap: 16px; justify-content: flex-end;">
-    <i class="fas fa-database"></i> data saved locally · both sides active
-    <i class="fas fa-arrow-rotate-left" style="margin-left: 12px; cursor: pointer;" onclick="localStorage.clear(); location.reload();" title="reset demo"></i>
-  </p>
 </div>
 
 <script>
-  // ---------- P2P DASHBOARD : FULL BUY & SELL ----------
-  // Two separate arrays for open orders
-  let buyOrders = [];
-  let sellOrders = [];
+    document.getElementById('fileInput').addEventListener('change', handleFile, false);
 
-  // Load from localStorage
-  function loadFromStorage() {
-    const storedBuys = localStorage.getItem('p2p_buyOrders');
-    const storedSells = localStorage.getItem('p2p_sellOrders');
-    buyOrders = storedBuys ? JSON.parse(storedBuys) : [];
-    sellOrders = storedSells ? JSON.parse(storedSells) : [];
-  }
+    function handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-  // Save both arrays
-  function saveToStorage() {
-    localStorage.setItem('p2p_buyOrders', JSON.stringify(buyOrders));
-    localStorage.setItem('p2p_sellOrders', JSON.stringify(sellOrders));
-  }
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('error').innerText = '';
+        document.getElementById('results').style.display = 'none';
 
-  // ----- ADD BUY ORDER -----
-  function addBuyOrder() {
-    const price = parseFloat(document.getElementById('buyPrice').value);
-    const amount = parseFloat(document.getElementById('buyAmount').value);
-    if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
-      alert('Enter valid price and amount');
-      return;
-    }
-    buyOrders.push({ price, amount });
-    saveToStorage();
-    renderAll();
-    // clear fields (optional)
-    document.getElementById('buyPrice').value = '';
-    document.getElementById('buyAmount').value = '';
-  }
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+            try {
+                const data = new Uint8Array(loadEvent.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
 
-  // ----- ADD SELL ORDER -----
-  function addSellOrder() {
-    const price = parseFloat(document.getElementById('sellPrice').value);
-    const amount = parseFloat(document.getElementById('sellAmount').value);
-    if (isNaN(price) || isNaN(amount) || price <= 0 || amount <= 0) {
-      alert('Enter valid price and amount');
-      return;
-    }
-    sellOrders.push({ price, amount });
-    saveToStorage();
-    renderAll();
-    document.getElementById('sellPrice').value = '';
-    document.getElementById('sellAmount').value = '';
-  }
+                // Find the header row (the one containing "Order No.")
+                let headerRowIndex = -1;
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.some(cell => String(cell).trim().includes('Order No.'))) {
+                        headerRowIndex = i;
+                        break;
+                    }
+                }
+                if (headerRowIndex === -1) {
+                    throw new Error("Could not find header row containing 'Order No.'");
+                }
 
-  // ----- REMOVE BUY ORDER -----
-  function removeBuyOrder(index) {
-    buyOrders.splice(index, 1);
-    saveToStorage();
-    renderAll();
-  }
+                const headerRow = rows[headerRowIndex].map(cell => String(cell).trim());
+                // Define the fields we need and find their column indices (first occurrence)
+                const requiredFields = ['Type', 'Fiat Amount', 'Price', 'Coin Amount', 'Counterparty', 'Status'];
+                const colIndices = {};
+                requiredFields.forEach(field => {
+                    const index = headerRow.findIndex(h => h.includes(field)); // partial match to be safe
+                    if (index === -1) {
+                        throw new Error(`Required column "${field}" not found in header`);
+                    }
+                    colIndices[field] = index;
+                });
 
-  // ----- REMOVE SELL ORDER -----
-  function removeSellOrder(index) {
-    sellOrders.splice(index, 1);
-    saveToStorage();
-    renderAll();
-  }
+                // Extract data rows (after header)
+                const orders = [];
+                for (let i = headerRowIndex + 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length === 0) continue;
+                    // Build order object using indices
+                    const order = {
+                        type: row[colIndices['Type']] ? String(row[colIndices['Type']]).trim().toUpperCase() : '',
+                        fiatAmount: row[colIndices['Fiat Amount']],
+                        price: row[colIndices['Price']],
+                        coinAmount: row[colIndices['Coin Amount']],
+                        counterparty: row[colIndices['Counterparty']] ? String(row[colIndices['Counterparty']]).trim() : '',
+                        status: row[colIndices['Status']] ? String(row[colIndices['Status']]).trim().toLowerCase() : ''
+                    };
+                    // Only keep rows with at least type and status
+                    if (order.type && order.status) {
+                        orders.push(order);
+                    }
+                }
 
-  // ----- RENDER BOTH TABLES + ALL STATS -----
-  function renderAll() {
-    renderBuyTable();
-    renderSellTable();
-    calculateAll();
-  }
+                if (orders.length === 0) {
+                    throw new Error("No valid order rows found after header.");
+                }
 
-  // Buy table
-  function renderBuyTable() {
-    const tbody = document.getElementById('buyTableBody');
-    tbody.innerHTML = '';
-    if (buyOrders.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="4"><i class="fas fa-box-open"></i> no buy orders</td></tr>';
-      document.getElementById('buyTotalFiat').innerText = '0.00';
-      return;
-    }
-    let totalFiat = 0;
-    buyOrders.forEach((order, idx) => {
-      const total = order.price * order.amount;
-      totalFiat += total;
-      const row = `<tr>
-        <td>${order.price.toFixed(4)}</td>
-        <td>${order.amount.toFixed(2)}</td>
-        <td class="total-value">${total.toFixed(2)}</td>
-        <td><button class="btn btn-remove" onclick="removeBuyOrder(${idx})"><i class="fas fa-trash-can"></i></button></td>
-      </tr>`;
-      tbody.innerHTML += row;
-    });
-    document.getElementById('buyTotalFiat').innerText = totalFiat.toFixed(2);
-  }
-
-  // Sell table
-  function renderSellTable() {
-    const tbody = document.getElementById('sellTableBody');
-    tbody.innerHTML = '';
-    if (sellOrders.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="4"><i class="fas fa-box-open"></i> no sell orders</td></tr>';
-      document.getElementById('sellTotalFiat').innerText = '0.00';
-      return;
-    }
-    let totalFiat = 0;
-    sellOrders.forEach((order, idx) => {
-      const total = order.price * order.amount;
-      totalFiat += total;
-      const row = `<tr>
-        <td>${order.price.toFixed(4)}</td>
-        <td>${order.amount.toFixed(2)}</td>
-        <td class="total-value">${total.toFixed(2)}</td>
-        <td><button class="btn btn-remove" onclick="removeSellOrder(${idx})"><i class="fas fa-trash-can"></i></button></td>
-      </tr>`;
-      tbody.innerHTML += row;
-    });
-    document.getElementById('sellTotalFiat').innerText = totalFiat.toFixed(2);
-  }
-
-  // ----- MAIN CALCULATION: totals, averages, profit, suggested sell -----
-  function calculateAll() {
-    // --- BUY SIDE aggregates ---
-    let totalBoughtQty = 0;
-    let totalCost = 0;
-    buyOrders.forEach(o => {
-      totalBoughtQty += o.amount;
-      totalCost += o.price * o.amount;
-    });
-
-    // --- SELL SIDE aggregates ---
-    let totalSoldQty = 0;
-    let totalRevenue = 0;
-    sellOrders.forEach(o => {
-      totalSoldQty += o.amount;
-      totalRevenue += o.price * o.amount;
-    });
-
-    // NET USDT inventory
-    const netQty = totalBoughtQty - totalSoldQty;
-
-    // Averages
-    const avgBuy = totalBoughtQty > 0 ? totalCost / totalBoughtQty : 0;
-    const avgSell = totalSoldQty > 0 ? totalRevenue / totalSoldQty : 0;
-
-    // Profit / loss (if we consider all sells executed)
-    const profit = totalRevenue - totalCost;
-
-    // update stats grid
-    document.getElementById('totalBoughtQty').innerText = totalBoughtQty.toFixed(2);
-    document.getElementById('totalCostDisplay').innerText = totalCost.toFixed(2);
-    document.getElementById('totalSoldQty').innerText = totalSoldQty.toFixed(2);
-    document.getElementById('totalRevenueDisplay').innerText = totalRevenue.toFixed(2);
-    document.getElementById('netQty').innerText = netQty.toFixed(2);
-    document.getElementById('avgBuyPrice').innerText = avgBuy.toFixed(4);
-    document.getElementById('avgSellPrice').innerText = avgSell.toFixed(4);
-    
-    // profit / loss with styling
-    const profitEl = document.getElementById('profitLoss');
-    profitEl.innerText = profit.toFixed(2);
-    const profitStatus = document.getElementById('profitStatus');
-    if (profit > 0) {
-      profitEl.style.color = '#1e7b4b';
-      profitStatus.innerHTML = '<span style="background:#e2f0e4; padding:3px 10px; border-radius:40px;">⬆️ profit</span>';
-    } else if (profit < 0) {
-      profitEl.style.color = '#b13b3b';
-      profitStatus.innerHTML = '<span style="background:#ffe6e6; padding:3px 10px; border-radius:40px;">⬇️ loss</span>';
-    } else {
-      profitEl.style.color = '#0b1c33';
-      profitStatus.innerHTML = 'breakeven';
+                const result = analyzeOrders(orders);
+                displayResults(result);
+            } catch (err) {
+                document.getElementById('error').innerText = 'Error: ' + err.message;
+                console.error(err);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        };
+        reader.readAsArrayBuffer(file);
     }
 
-    // SUGGESTED SELL based on target profit % (from avg buy)
-    const targetPercent = parseFloat(document.getElementById('profitPercent').value) || 0;
-    let suggestedSell = avgBuy * (1 + targetPercent / 100);
-    if (avgBuy === 0) suggestedSell = 0;
-    document.getElementById('suggestedSellPrice').innerText = suggestedSell.toFixed(4);
-  }
+    function parseNum(val) {
+        if (val === null || val === undefined) return 0;
+        if (typeof val === 'number') return val;
+        const str = String(val).replace(/,/g, '').trim();
+        const num = parseFloat(str);
+        return isNaN(num) ? 0 : num;
+    }
 
-  // ----- INITIAL LOAD & RENDER -----
-  loadFromStorage();
-  renderAll();
+    function analyzeOrders(orders) {
+        // Filter completed orders
+        const completed = orders.filter(o => o.status === 'completed');
 
-  // For manual profit input change
-  window.calculateAll = calculateAll;
-  window.addBuyOrder = addBuyOrder;
-  window.addSellOrder = addSellOrder;
-  window.removeBuyOrder = removeBuyOrder;
-  window.removeSellOrder = removeSellOrder;
-  // attach to window for inline onclick
+        // Separate buys and sells
+        const buys = completed.filter(o => o.type === 'BUY');
+        const sells = completed.filter(o => o.type === 'SELL');
 
+        // Calculate totals
+        let totalBought = 0, totalSpent = 0;
+        buys.forEach(b => {
+            totalBought += parseNum(b.coinAmount);
+            totalSpent += parseNum(b.fiatAmount);
+        });
+
+        let totalSold = 0, totalReceived = 0;
+        sells.forEach(s => {
+            totalSold += parseNum(s.coinAmount);
+            totalReceived += parseNum(s.fiatAmount);
+        });
+
+        const netUsd = totalBought - totalSold;
+        const netFiat = totalSpent - totalReceived;
+
+        // Weighted average prices
+        const avgBuy = totalBought ? totalSpent / totalBought : 0;
+        const avgSell = totalSold ? totalReceived / totalSold : 0;
+
+        // Realized profit (average cost)
+        const costOfSold = totalSold * avgBuy;
+        const realizedProfit = totalReceived - costOfSold;
+
+        // Group buys by price
+        const buyByPrice = {};
+        buys.forEach(b => {
+            const price = parseNum(b.price);
+            const coin = parseNum(b.coinAmount);
+            const fiat = parseNum(b.fiatAmount);
+            if (!buyByPrice[price]) {
+                buyByPrice[price] = { usdt: 0, fiat: 0 };
+            }
+            buyByPrice[price].usdt += coin;
+            buyByPrice[price].fiat += fiat;
+        });
+
+        // Group sells by price
+        const sellByPrice = {};
+        sells.forEach(s => {
+            const price = parseNum(s.price);
+            const coin = parseNum(s.coinAmount);
+            const fiat = parseNum(s.fiatAmount);
+            if (!sellByPrice[price]) {
+                sellByPrice[price] = { usdt: 0, fiat: 0 };
+            }
+            sellByPrice[price].usdt += coin;
+            sellByPrice[price].fiat += fiat;
+        });
+
+        // Top counterparties
+        const buyerCounterparties = {};
+        buys.forEach(b => {
+            const cp = b.counterparty || 'Unknown';
+            if (!buyerCounterparties[cp]) buyerCounterparties[cp] = 0;
+            buyerCounterparties[cp] += parseNum(b.coinAmount);
+        });
+
+        const sellerCounterparties = {};
+        sells.forEach(s => {
+            const cp = s.counterparty || 'Unknown';
+            if (!sellerCounterparties[cp]) sellerCounterparties[cp] = 0;
+            sellerCounterparties[cp] += parseNum(s.coinAmount);
+        });
+
+        const topBuyers = Object.entries(buyerCounterparties)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+        const topSellers = Object.entries(sellerCounterparties)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+        return {
+            totalBuys: buys.length,
+            totalSells: sells.length,
+            totalBought,
+            totalSpent,
+            totalSold,
+            totalReceived,
+            netUsd,
+            netFiat,
+            avgBuy,
+            avgSell,
+            realizedProfit,
+            buyByPrice,
+            sellByPrice,
+            topBuyers,
+            topSellers
+        };
+    }
+
+    function displayResults(r) {
+        // Summary cards
+        const summaryHtml = `
+            <div class="card">
+                <h3>📥 Total Buys</h3>
+                <div class="value">${r.totalBuys}</div>
+                <div class="sub">${r.totalBought.toFixed(4)} USDT / ${r.totalSpent.toFixed(2)} GHS</div>
+            </div>
+            <div class="card">
+                <h3>📤 Total Sells</h3>
+                <div class="value">${r.totalSells}</div>
+                <div class="sub">${r.totalSold.toFixed(4)} USDT / ${r.totalReceived.toFixed(2)} GHS</div>
+            </div>
+            <div class="card">
+                <h3>📦 Net Inventory</h3>
+                <div class="value">${r.netUsd.toFixed(4)} USDT</div>
+                <div class="sub">Cost: ${r.netFiat.toFixed(2)} GHS</div>
+            </div>
+            <div class="card">
+                <h3>⚖️ Avg Buy Price</h3>
+                <div class="value">${r.avgBuy.toFixed(3)} GHS</div>
+            </div>
+            <div class="card">
+                <h3>⚖️ Avg Sell Price</h3>
+                <div class="value">${r.avgSell.toFixed(3)} GHS</div>
+            </div>
+            <div class="card">
+                <h3>💰 Realized Profit</h3>
+                <div class="value ${r.realizedProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                    ${r.realizedProfit.toFixed(2)} GHS
+                </div>
+            </div>
+        `;
+        document.getElementById('summaryCards').innerHTML = summaryHtml;
+
+        // Buy by price table
+        const buyPrices = Object.keys(r.buyByPrice).sort((a,b) => parseFloat(a) - parseFloat(b));
+        let buyRows = '';
+        buyPrices.forEach(price => {
+            const p = parseFloat(price).toFixed(2);
+            const usdt = r.buyByPrice[price].usdt.toFixed(4);
+            const fiat = r.buyByPrice[price].fiat.toFixed(2);
+            buyRows += `<tr><td>${p}</td><td class="text-right">${usdt}</td><td class="text-right">${fiat}</td></tr>`;
+        });
+        document.getElementById('buyByPriceTable').innerHTML = `
+            <h3>📊 Buy Quantity by Price (GHS/USDT)</h3>
+            <table>
+                <thead><tr><th>Price</th><th>USDT Bought</th><th>GHS Spent</th></tr></thead>
+                <tbody>${buyRows || '<tr><td colspan="3">No data</td></tr>'}</tbody>
+            </table>
+        `;
+
+        // Sell by price table
+        const sellPrices = Object.keys(r.sellByPrice).sort((a,b) => parseFloat(a) - parseFloat(b));
+        let sellRows = '';
+        sellPrices.forEach(price => {
+            const p = parseFloat(price).toFixed(2);
+            const usdt = r.sellByPrice[price].usdt.toFixed(4);
+            const fiat = r.sellByPrice[price].fiat.toFixed(2);
+            sellRows += `<tr><td>${p}</td><td class="text-right">${usdt}</td><td class="text-right">${fiat}</td></tr>`;
+        });
+        document.getElementById('sellByPriceTable').innerHTML = `
+            <h3>📊 Sell Quantity by Price (GHS/USDT)</h3>
+            <table>
+                <thead><tr><th>Price</th><th>USDT Sold</th><th>GHS Received</th></tr></thead>
+                <tbody>${sellRows || '<tr><td colspan="3">No data</td></tr>'}</tbody>
+            </table>
+        `;
+
+        // Counterparty table (FIXED fallback values)
+        let cpRows = '';
+        const maxLen = Math.max(r.topBuyers.length, r.topSellers.length);
+        for (let i = 0; i < maxLen; i++) {
+            const buyer = r.topBuyers[i] || ['', 0];
+            const seller = r.topSellers[i] || ['', 0];
+            cpRows += `<tr>
+                <td>${buyer[0]}</td><td class="text-right">${buyer[1].toFixed(4)}</td>
+                <td>${seller[0]}</td><td class="text-right">${seller[1].toFixed(4)}</td>
+            </tr>`;
+        }
+        document.getElementById('counterpartyTable').innerHTML = `
+            <h3>🤝 Top Counterparties by Volume</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Buyer</th><th>USDT Bought</th>
+                        <th>Seller</th><th>USDT Sold</th>
+                    </tr>
+                </thead>
+                <tbody>${cpRows || '<tr><td colspan="4">No counterparty data</td></tr>'}</tbody>
+            </table>
+        `;
+
+        document.getElementById('results').style.display = 'block';
+    }
 </script>
-
-<!-- small reset if needed (already inline) -->
-
 </body>
 </html>
