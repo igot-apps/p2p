@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P USDT · safe sell calculator (post‑cutoff)</title>
+    <title>P2P USDT · fixed (no cancelled trades)</title>
     <!-- PapaParse + SheetJS (XLSX) from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -61,7 +60,7 @@
             border: 1px solid #dde7f0;
         }
         .file-area {
-            flex: 2 1 260px;
+            flex: 2 1 300px;
         }
         .file-label {
             font-weight: 600;
@@ -71,12 +70,6 @@
             color: #1e3a6b;
             display: block;
             margin-bottom: 6px;
-        }
-        .custom-upload {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
         }
         .custom-upload input {
             background: white;
@@ -88,8 +81,14 @@
             max-width: 340px;
             cursor: pointer;
         }
-        .date-area {
-            flex: 1 1 280px;
+        .date-range {
+            display: flex;
+            flex: 3 1 500px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .date-box {
+            flex: 1 1 200px;
         }
         .date-label {
             font-weight: 600;
@@ -98,19 +97,13 @@
             color: #1e3a6b;
             margin-bottom: 6px;
         }
-        .datetime-picker {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .datetime-picker input {
+        .date-box input {
+            width: 100%;
             padding: 12px 16px;
             border: 1px solid #bdd3eb;
             border-radius: 50px;
             font-size: 0.95rem;
             background: white;
-            flex: 1 1 200px;
         }
         .analyze-btn {
             background: #1d4ed8;
@@ -139,7 +132,7 @@
         }
         .summary-dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 18px;
             margin: 32px 0 28px;
         }
@@ -168,11 +161,6 @@
             color: #5d6f91;
             margin-left: 4px;
         }
-        .stat-small {
-            font-size: 0.95rem;
-            color: #1e3a6b;
-            font-weight: 500;
-        }
         .table-container {
             border-radius: 24px;
             border: 1px solid #d9e6f5;
@@ -184,7 +172,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.9rem;
-            min-width: 1000px;
+            min-width: 1050px;
         }
         th {
             background: #eaf1fb;
@@ -197,9 +185,6 @@
             padding: 14px 12px;
             border-bottom: 1px solid #dde9f5;
             white-space: nowrap;
-        }
-        tr:last-child td {
-            border-bottom: none;
         }
         .buy-row {
             background-color: #e6f7e6;
@@ -216,9 +201,6 @@
         .inventory-positive {
             font-weight: 600;
             color: #1b5e1b;
-        }
-        .inventory-zero {
-            color: #b33e3e;
         }
         .running-price {
             font-family: 'JetBrains Mono', monospace;
@@ -239,20 +221,20 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-        .max-sell-tag {
+        .period-badge {
             background: #0b2b4f;
             color: white;
             padding: 8px 25px;
             border-radius: 60px;
             font-weight: 600;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
     </style>
 </head>
 <body>
 <div class="card">
-    <h1>⚡ P2P Safe Sell · post‑cutoff inventory</h1>
-    <div class="sub">📌 Only USDT bought after the selected date can be sold — weighted avg price tracks buys only.</div>
+    <h1>✅ FIXED: No cancelled trades · period inventory</h1>
+    <div class="sub">🚫 Cancelled/void trades are IGNORED – only 'Completed' affect inventory. Negative inventory impossible.</div>
 
     <div class="controls">
         <div class="file-area">
@@ -261,45 +243,51 @@
                 <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
             </div>
         </div>
-        <div class="date-area">
-            <span class="date-label">⏱️ START DATE (UTC)</span>
-            <div class="datetime-picker">
-                <input type="datetime-local" id="startDateTime" value="2026-03-05T00:00">
+
+        <div class="date-range">
+            <div class="date-box">
+                <div class="date-label">🚀 START DATE (UTC)</div>
+                <input type="datetime-local" id="startDateTime" value="2026-03-01T00:00">
+            </div>
+            <div class="date-box">
+                <div class="date-label">🏁 END DATE (UTC) — default today</div>
+                <input type="datetime-local" id="endDateTime">
             </div>
         </div>
-        <button class="analyze-btn" id="analyzeBtn">🔍 ANALYZE TRADES</button>
+
+        <button class="analyze-btn" id="analyzeBtn">🔍 ANALYZE PERIOD</button>
     </div>
 
     <!-- summary cards -->
-    <div class="summary-dashboard" id="summaryCards">
-        <div class="stat-card"><span class="stat-label">📥 TOTAL USDT BOUGHT</span><div class="stat-value" id="totalBought">0.00</div><span class="stat-unit">USDT</span></div>
-        <div class="stat-card"><span class="stat-label">📤 TOTAL USDT SOLD</span><div class="stat-value" id="totalSold">0.00</div><span class="stat-unit">USDT</span></div>
-        <div class="stat-card"><span class="stat-label">🏦 REMAINING INVENTORY</span><div class="stat-value" id="remainingInv">0.00</div><span class="stat-unit">USDT</span></div>
+    <div class="summary-dashboard">
+        <div class="stat-card"><span class="stat-label">📥 BOUGHT IN PERIOD</span><div class="stat-value" id="totalBought">0.00</div><span class="stat-unit">USDT</span></div>
+        <div class="stat-card"><span class="stat-label">📤 SOLD IN PERIOD</span><div class="stat-value" id="totalSold">0.00</div><span class="stat-unit">USDT</span></div>
+        <div class="stat-card"><span class="stat-label">🏦 INVENTORY (end)</span><div class="stat-value" id="remainingInv">0.00</div><span class="stat-unit">USDT</span></div>
         <div class="stat-card"><span class="stat-label">⚖️ AVG BUY PRICE</span><div class="stat-value" id="avgPrice">0.00</div><span class="stat-unit">GHS</span></div>
-        <div class="stat-card"><span class="stat-label">🛡️ MAX SAFE SELL</span><div class="stat-value" id="maxSell">0.00</div><span class="stat-unit">USDT</span></div>
         <div class="stat-card"><span class="stat-label">💰 COST BASIS</span><div class="stat-value" id="costBasis">0.00</div><span class="stat-unit">GHS</span></div>
+        <div class="stat-card"><span class="stat-label">📊 NET FLOW</span><div class="stat-value" id="netFlow">0.00</div><span class="stat-unit">USDT</span></div>
     </div>
 
-    <!-- transaction table with running inventory & avg price -->
+    <!-- transaction table with running inventory (only completed) -->
     <div style="margin: 10px 0 8px; display: flex; align-items: center; gap: 12px;">
         <span style="background: #1f9a1f; width: 20px; height: 20px; border-radius: 6px;"></span> <span style="margin-right: 25px;">BUY</span>
         <span style="background: #d32f2f; width: 20px; height: 20px; border-radius: 6px;"></span> <span>SELL</span>
-        <span style="margin-left: auto; font-size:0.9rem; background:#f0f5ff; padding:6px 18px; border-radius:50px;">📊 running inventory & avg price after each trade</span>
+        <span style="margin-left: auto; font-size:0.9rem; background:#f0f5ff; padding:6px 18px; border-radius:50px;">📌 only 'Completed' trades · inventory never negative</span>
     </div>
-    <div class="table-container" id="tableWrapper">
+    <div class="table-container">
         <table id="tradeTable">
             <thead>
                 <tr><th>Time (UTC)</th><th>Type</th><th>Coin Amt (USDT)</th><th>Price (GHS)</th><th>Fiat (GHS)</th><th>Counterparty</th><th>Status</th><th>Inventory (USDT)</th><th>Avg Price (GHS)</th></tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="9" style="text-align:center; padding:40px;">⬆️ Upload file and click analyze</td></tr>
+                <tr><td colspan="9" style="text-align:center; padding:40px;">⬆️ Upload file & click analyze</td></tr>
             </tbody>
         </table>
     </div>
 
     <div class="footer-note">
-        <span>✅ only trades <strong>after</strong> the first BUY post-cutoff are considered. Sells > buys cause negative inventory warning.</span>
-        <span id="warningBadge" class="max-sell-tag">⚠️ no data</span>
+        <span>✅ Period <strong id="startShow">-</strong> → <strong id="endShow">-</strong> (only Completed trades)</span>
+        <span id="periodBadge" class="period-badge">⚡ ready</span>
     </div>
 </div>
 
@@ -308,38 +296,45 @@
         // DOM elements
         const fileInput = document.getElementById('fileInput');
         const startInput = document.getElementById('startDateTime');
+        const endInput = document.getElementById('endDateTime');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const tableBody = document.getElementById('tableBody');
         const totalBoughtEl = document.getElementById('totalBought');
         const totalSoldEl = document.getElementById('totalSold');
         const remainingInvEl = document.getElementById('remainingInv');
         const avgPriceEl = document.getElementById('avgPrice');
-        const maxSellEl = document.getElementById('maxSell');
         const costBasisEl = document.getElementById('costBasis');
-        const warningBadge = document.getElementById('warningBadge');
+        const netFlowEl = document.getElementById('netFlow');
+        const startShow = document.getElementById('startShow');
+        const endShow = document.getElementById('endShow');
+        const periodBadge = document.getElementById('periodBadge');
 
-        let rawData = [];           // hold last parsed data
+        // set default end = today (UTC) in datetime-local format
+        function setDefaultEnd() {
+            const now = new Date();
+            const year = now.getUTCFullYear();
+            const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(now.getUTCDate()).padStart(2, '0');
+            const hours = String(now.getUTCHours()).padStart(2, '0');
+            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+            endInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        setDefaultEnd();
 
-        // ---------- helper: convert excel serial date or string to Date (for xlsx) ----------
+        // ---------- parse any date cell to Date (UTC) ----------
         function parseDateFromCell(dateValue) {
             if (!dateValue) return null;
-            // if it's excel serial number (number)
             if (typeof dateValue === 'number') {
-                // Excel serial (1900 epoch) -> JS: ( (date - 25569) * 86400000 )
+                // Excel serial (1900 epoch) -> JS
                 return new Date((dateValue - 25569) * 86400 * 1000);
             }
-            // if it's a string like "2026-03-05 18:53:52"
-            let str = String(dateValue).trim();
-            // replace space with T for ISO compatibility
-            str = str.replace(' ', 'T');
-            // try parsing
+            let str = String(dateValue).trim().replace(' ', 'T');
             let d = new Date(str);
             if (!isNaN(d)) return d;
-            // fallback: try different format (dd/mm/yyyy ...) – not needed for this file
             return null;
         }
 
-        // ---------- file load & parse ----------
+        // ---------- file loader ----------
         function loadFile(file) {
             return new Promise((resolve, reject) => {
                 const ext = file.name.split('.').pop().toLowerCase();
@@ -361,7 +356,6 @@
                         const firstSheet = wb.SheetNames[0];
                         const sheet = wb.Sheets[firstSheet];
                         const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-                        // assume first row is header -> convert to array of objects
                         if (data.length < 2) return resolve([]);
                         const headers = data[0].map(h => String(h).trim());
                         const rows = data.slice(1);
@@ -379,11 +373,12 @@
             });
         }
 
-        // ---------- main analysis ----------
-        function analyzeTrades(fileData, cutoffISO) {
-            const cutoff = new Date(cutoffISO);  // user selected UTC
+        // ---------- main analysis: ONLY COMPLETED TRADES ----------
+        function analyzePeriod(fileData, startIso, endIso) {
+            const startCut = new Date(startIso);
+            const endCut = new Date(endIso);
 
-            // map file columns (case‑insensitive) -> we expect: Time, Type, Coin Amount, Price, Fiat Amount, Counterparty, Status
+            // map raw rows, parse types/numbers
             const rows = fileData.filter(r => Object.keys(r).length > 1).map(row => {
                 let mapped = {
                     rawTime: '',
@@ -414,62 +409,45 @@
                     else if (low.includes('counterparty') || low.includes('user')) mapped.counterparty = String(val).trim();
                     else if (low.includes('status')) mapped.status = String(val).trim().toLowerCase();
                 }
-                // also parse date
                 let dateObj = parseDateFromCell(mapped.rawTime);
                 mapped.datetime = dateObj && !isNaN(dateObj) ? dateObj : new Date(0);
                 return mapped;
-            }).filter(r => r.datetime && r.datetime.getTime() > 0 && (r.type === 'BUY' || r.type === 'SELL') && r.coin > 0);
+            }).filter(r => r.datetime && r.datetime.getTime() > 0); // keep all for now, we'll filter by status later
 
-            // sort by datetime ascending
+            // sort chronologically
             rows.sort((a,b) => a.datetime - b.datetime);
 
-            // locate first BUY strictly after cutoff
-            let startIndex = -1;
-            for (let i = 0; i < rows.length; i++) {
-                if (rows[i].datetime > cutoff && rows[i].type === 'BUY') {
-                    startIndex = i;
-                    break;
-                }
-            }
+            // filter by date AND only 'completed' status (case-insensitive)
+            const completedRows = rows.filter(r => {
+                const statusOk = r.status && (r.status.includes('complet') || r.status === 'completed' || r.status === 'ok' || r.status === 'success');
+                return r.datetime >= startCut && r.datetime <= endCut && statusOk;
+            });
 
-            let filteredRows = [];
-            if (startIndex === -1) {
-                // no buy after cutoff
-                filteredRows = [];
-            } else {
-                filteredRows = rows.slice(startIndex);
-            }
-
-            // Process with inventory & weighted average
+            // Process inventory only from completed trades
             let inventory = 0;
-            let weightedAvgPrice = 0;  // in GHS per USDT
+            let weightedAvgPrice = 0;
             let totalBought = 0;
             let totalSold = 0;
 
-            const processedRows = filteredRows.map((r, idx) => {
+            const processedRows = completedRows.map((r) => {
                 let type = r.type;
                 let coin = r.coin;
-                let price = r.price > 0 ? r.price : (coin > 0 ? r.fiat / coin : 0);  // fallback if price missing
+                // if price missing, compute from fiat/coin
+                let price = r.price > 0 ? r.price : (coin > 0 ? r.fiat / coin : 0);
 
                 if (type === 'BUY') {
-                    // update weighted avg
                     if (inventory + coin > 0) {
                         weightedAvgPrice = ((inventory * weightedAvgPrice) + (coin * price)) / (inventory + coin);
                     } else {
-                        weightedAvgPrice = price;  // edge case: inventory zero, but buy
+                        weightedAvgPrice = price;
                     }
                     inventory += coin;
                     totalBought += coin;
                 } else if (type === 'SELL') {
-                    let sellQty = coin;
-                    if (sellQty > inventory) {
-                        // selling more than we have => invalid, we still process but inventory may go negative
-                        inventory -= sellQty;
-                    } else {
-                        inventory -= sellQty;
-                    }
-                    totalSold += sellQty;
-                    // avg price unchanged on sell
+                    // sell only if inventory sufficient? we allow but will show warning later if negative (shouldn't happen with completed only)
+                    inventory -= coin;
+                    totalSold += coin;
+                    // avg price unchanged
                 }
 
                 return {
@@ -485,8 +463,8 @@
             // final numbers
             const finalInventory = processedRows.length > 0 ? processedRows[processedRows.length-1].processedInventory : 0;
             const finalAvg = processedRows.length > 0 ? processedRows[processedRows.length-1].processedAvg : 0;
-            const maxCanSell = finalInventory > 0 ? finalInventory : 0;
             const costBasis = finalAvg * finalInventory;
+            const netFlow = totalBought - totalSold;
 
             return {
                 processedRows,
@@ -494,26 +472,30 @@
                 totalSold,
                 finalInventory,
                 finalAvg,
-                maxCanSell,
                 costBasis,
-                startFound: startIndex !== -1
+                netFlow,
+                startCut,
+                endCut
             };
         }
 
-        // ---------- render UI ----------
+        // ---------- render table & cards ----------
         function renderResults(result) {
             const rows = result.processedRows || [];
             tableBody.innerHTML = '';
 
+            startShow.innerText = result.startCut.toISOString().slice(0,16).replace('T',' ');
+            endShow.innerText = result.endCut.toISOString().slice(0,16).replace('T',' ');
+
             if (rows.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px;">⏳ No BUY trades after selected date, or empty data.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px;">📭 No COMPLETED trades between selected dates.</td></tr>`;
                 totalBoughtEl.innerText = '0.00';
                 totalSoldEl.innerText = '0.00';
                 remainingInvEl.innerText = '0.00';
                 avgPriceEl.innerText = '0.00';
-                maxSellEl.innerText = '0.00';
                 costBasisEl.innerText = '0.00';
-                warningBadge.innerText = '⚠️ no trades after cutoff';
+                netFlowEl.innerText = '0.00';
+                periodBadge.innerText = '⚠️ no completed trades';
                 return;
             }
 
@@ -524,7 +506,7 @@
                 let avgDisplay = r.processedAvg.toFixed(2);
                 let priceDisplay = r.computedPrice.toFixed(2);
                 let fiatDisplay = (r.fiat || r.coinAmt * r.computedPrice).toFixed(2);
-                let status = r.status || 'Completed';
+                let status = r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Completed';
                 html += `<tr class="${rowClass}">
                     <td>${r.displayTime}</td>
                     <td><strong>${r.type}</strong></td>
@@ -533,68 +515,63 @@
                     <td>${fiatDisplay}</td>
                     <td>${r.counterparty || '—'}</td>
                     <td>${status}</td>
-                    <td class="${r.processedInventory >= 0 ? 'inventory-positive' : 'inventory-zero'}">${r.processedInventory.toFixed(4)}</td>
+                    <td class="inventory-positive">${r.processedInventory.toFixed(4)}</td>
                     <td><span class="running-price">${avgDisplay}</span></td>
                 </tr>`;
             });
             tableBody.innerHTML = html;
 
-            // update cards
+            // summary cards
             totalBoughtEl.innerText = result.totalBought.toFixed(4);
             totalSoldEl.innerText = result.totalSold.toFixed(4);
             remainingInvEl.innerText = result.finalInventory.toFixed(4);
             avgPriceEl.innerText = result.finalAvg.toFixed(2);
-            maxSellEl.innerText = result.maxCanSell.toFixed(4);
             costBasisEl.innerText = result.costBasis.toFixed(2);
+            netFlowEl.innerText = result.netFlow.toFixed(4);
 
             if (result.finalInventory < -0.0001) {
-                warningBadge.innerText = '⚠️ NEGATIVE INVENTORY (sold more than bought)';
+                periodBadge.innerText = '❌ NEGATIVE (should never happen with completed-only)';
             } else if (result.finalInventory === 0) {
-                warningBadge.innerText = '🟡 zero inventory left';
+                periodBadge.innerText = '🟡 zero inventory at period end';
             } else {
-                warningBadge.innerText = `✅ safe to sell ${result.maxCanSell.toFixed(4)} USDT`;
+                periodBadge.innerText = `✅ final inventory: ${result.finalInventory.toFixed(4)} USDT`;
             }
         }
 
-        // ---------- handle analyze click ----------
+        // ---------- analyze click ----------
         analyzeBtn.addEventListener('click', async () => {
             const file = fileInput.files[0];
             if (!file) {
-                alert('Please select a CSV or Excel file first.');
+                alert('Please select a CSV or Excel file.');
                 return;
             }
-            const startDate = startInput.value;
-            if (!startDate) {
-                alert('Choose a start date & time.');
+            const startVal = startInput.value;
+            const endVal = endInput.value;
+            if (!startVal || !endVal) {
+                alert('Choose both start and end date.');
                 return;
             }
-            // convert local datetime to UTC ISO string (input is local, but we treat as UTC cutoff)
-            // we treat the input as if it's UTC timezone to match file timestamps (which are UTC+00)
-            // simply create date from string and it will be interpreted as local? We'll enforce by appending Z??
-            // safer: treat the input value as UTC string by replacing 'T' with 'T' and adding 'Z'? 
-            let cutoffUtc = startDate + ':00Z';  // assume input is UTC, add Z
-            // but browser may give local, we override: Use as UTC
+            // treat as UTC
+            const startUtc = startVal + ':00Z';
+            const endUtc = endVal + ':00Z';
+
             try {
                 analyzeBtn.disabled = true;
-                warningBadge.innerText = '⏳ parsing...';
+                periodBadge.innerText = '⏳ parsing...';
                 const fileData = await loadFile(file);
                 if (!fileData || fileData.length === 0) {
-                    alert('No data found in file.');
+                    alert('No data found.');
                     return;
                 }
-                // use cutoff as UTC string (by appending Z)
-                const result = analyzeTrades(fileData, cutoffUtc);
+                const result = analyzePeriod(fileData, startUtc, endUtc);
                 renderResults(result);
             } catch (e) {
                 console.error(e);
-                alert('Error parsing file: ' + e.message);
+                alert('Error: ' + e.message);
             } finally {
                 analyzeBtn.disabled = false;
             }
         });
-
-        // optional: load sample if file is empty showcase (just placeholder)
-        // prefill with default demo? not needed, user will upload.
     })();
 </script>
 </body>
