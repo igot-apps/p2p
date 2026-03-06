@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P USDT · fixed (no cancelled trades)</title>
+    <title>P2P USDT · avg sell price + profit (no cancelled)</title>
     <!-- PapaParse + SheetJS (XLSX) from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -132,7 +132,7 @@
         }
         .summary-dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
             gap: 18px;
             margin: 32px 0 28px;
         }
@@ -161,6 +161,12 @@
             color: #5d6f91;
             margin-left: 4px;
         }
+        .profit-positive {
+            color: #1b8c1b;
+        }
+        .profit-negative {
+            color: #b33e3e;
+        }
         .table-container {
             border-radius: 24px;
             border: 1px solid #d9e6f5;
@@ -172,7 +178,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.9rem;
-            min-width: 1050px;
+            min-width: 1100px;
         }
         th {
             background: #eaf1fb;
@@ -221,7 +227,7 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-        .period-badge {
+        .profit-badge {
             background: #0b2b4f;
             color: white;
             padding: 8px 25px;
@@ -233,8 +239,8 @@
 </head>
 <body>
 <div class="card">
-    <h1>✅ FIXED: No cancelled trades · period inventory</h1>
-    <div class="sub">🚫 Cancelled/void trades are IGNORED – only 'Completed' affect inventory. Negative inventory impossible.</div>
+    <h1>📈 +💰 Avg sell price & profit · period analysis</h1>
+    <div class="sub">📊 Now also shows average sell price and estimated profit (sell revenue − cost of goods sold).</div>
 
     <div class="controls">
         <div class="file-area">
@@ -258,26 +264,26 @@
         <button class="analyze-btn" id="analyzeBtn">🔍 ANALYZE PERIOD</button>
     </div>
 
-    <!-- summary cards -->
+    <!-- summary cards – two new ones: avg sell price & profit -->
     <div class="summary-dashboard">
         <div class="stat-card"><span class="stat-label">📥 BOUGHT IN PERIOD</span><div class="stat-value" id="totalBought">0.00</div><span class="stat-unit">USDT</span></div>
         <div class="stat-card"><span class="stat-label">📤 SOLD IN PERIOD</span><div class="stat-value" id="totalSold">0.00</div><span class="stat-unit">USDT</span></div>
+        <div class="stat-card"><span class="stat-label">📊 AVG SELL PRICE</span><div class="stat-value" id="avgSellPrice">0.00</div><span class="stat-unit">GHS</span></div>
+        <div class="stat-card"><span class="stat-label">💰 EST. PROFIT</span><div class="stat-value" id="profitEst">0.00</div><span class="stat-unit">GHS</span></div>
         <div class="stat-card"><span class="stat-label">🏦 INVENTORY (end)</span><div class="stat-value" id="remainingInv">0.00</div><span class="stat-unit">USDT</span></div>
         <div class="stat-card"><span class="stat-label">⚖️ AVG BUY PRICE</span><div class="stat-value" id="avgPrice">0.00</div><span class="stat-unit">GHS</span></div>
-        <div class="stat-card"><span class="stat-label">💰 COST BASIS</span><div class="stat-value" id="costBasis">0.00</div><span class="stat-unit">GHS</span></div>
-        <div class="stat-card"><span class="stat-label">📊 NET FLOW</span><div class="stat-value" id="netFlow">0.00</div><span class="stat-unit">USDT</span></div>
     </div>
 
-    <!-- transaction table with running inventory (only completed) -->
+    <!-- transaction table with running inventory -->
     <div style="margin: 10px 0 8px; display: flex; align-items: center; gap: 12px;">
         <span style="background: #1f9a1f; width: 20px; height: 20px; border-radius: 6px;"></span> <span style="margin-right: 25px;">BUY</span>
         <span style="background: #d32f2f; width: 20px; height: 20px; border-radius: 6px;"></span> <span>SELL</span>
-        <span style="margin-left: auto; font-size:0.9rem; background:#f0f5ff; padding:6px 18px; border-radius:50px;">📌 only 'Completed' trades · inventory never negative</span>
+        <span style="margin-left: auto; font-size:0.9rem; background:#f0f5ff; padding:6px 18px; border-radius:50px;">📌 only 'Completed' · profit = sell revenue − cost (FIFO approximation)</span>
     </div>
     <div class="table-container">
         <table id="tradeTable">
             <thead>
-                <tr><th>Time (UTC)</th><th>Type</th><th>Coin Amt (USDT)</th><th>Price (GHS)</th><th>Fiat (GHS)</th><th>Counterparty</th><th>Status</th><th>Inventory (USDT)</th><th>Avg Price (GHS)</th></tr>
+                <tr><th>Time (UTC)</th><th>Type</th><th>Coin (USDT)</th><th>Price (GHS)</th><th>Fiat (GHS)</th><th>Counterparty</th><th>Status</th><th>Inventory</th><th>Avg Buy</th></tr>
             </thead>
             <tbody id="tableBody">
                 <tr><td colspan="9" style="text-align:center; padding:40px;">⬆️ Upload file & click analyze</td></tr>
@@ -287,7 +293,7 @@
 
     <div class="footer-note">
         <span>✅ Period <strong id="startShow">-</strong> → <strong id="endShow">-</strong> (only Completed trades)</span>
-        <span id="periodBadge" class="period-badge">⚡ ready</span>
+        <span id="profitBadge" class="profit-badge">⚡ ready</span>
     </div>
 </div>
 
@@ -301,15 +307,15 @@
         const tableBody = document.getElementById('tableBody');
         const totalBoughtEl = document.getElementById('totalBought');
         const totalSoldEl = document.getElementById('totalSold');
+        const avgSellPriceEl = document.getElementById('avgSellPrice');
+        const profitEstEl = document.getElementById('profitEst');
         const remainingInvEl = document.getElementById('remainingInv');
         const avgPriceEl = document.getElementById('avgPrice');
-        const costBasisEl = document.getElementById('costBasis');
-        const netFlowEl = document.getElementById('netFlow');
         const startShow = document.getElementById('startShow');
         const endShow = document.getElementById('endShow');
-        const periodBadge = document.getElementById('periodBadge');
+        const profitBadge = document.getElementById('profitBadge');
 
-        // set default end = today (UTC) in datetime-local format
+        // set default end = today (UTC)
         function setDefaultEnd() {
             const now = new Date();
             const year = now.getUTCFullYear();
@@ -325,7 +331,6 @@
         function parseDateFromCell(dateValue) {
             if (!dateValue) return null;
             if (typeof dateValue === 'number') {
-                // Excel serial (1900 epoch) -> JS
                 return new Date((dateValue - 25569) * 86400 * 1000);
             }
             let str = String(dateValue).trim().replace(' ', 'T');
@@ -373,7 +378,7 @@
             });
         }
 
-        // ---------- main analysis: ONLY COMPLETED TRADES ----------
+        // ---------- main analysis: with avg sell price & profit (FIFO approximation) ----------
         function analyzePeriod(fileData, startIso, endIso) {
             const startCut = new Date(startIso);
             const endCut = new Date(endIso);
@@ -412,42 +417,74 @@
                 let dateObj = parseDateFromCell(mapped.rawTime);
                 mapped.datetime = dateObj && !isNaN(dateObj) ? dateObj : new Date(0);
                 return mapped;
-            }).filter(r => r.datetime && r.datetime.getTime() > 0); // keep all for now, we'll filter by status later
+            }).filter(r => r.datetime && r.datetime.getTime() > 0);
 
             // sort chronologically
             rows.sort((a,b) => a.datetime - b.datetime);
 
-            // filter by date AND only 'completed' status (case-insensitive)
+            // filter by date AND only 'completed' status
             const completedRows = rows.filter(r => {
                 const statusOk = r.status && (r.status.includes('complet') || r.status === 'completed' || r.status === 'ok' || r.status === 'success');
                 return r.datetime >= startCut && r.datetime <= endCut && statusOk;
             });
 
-            // Process inventory only from completed trades
+            // --------------------------------------------------------------
+            // We need both inventory tracking (for display) AND profit calc.
+            // We'll use a FIFO cost queue to track cost of sold USDT.
+            // --------------------------------------------------------------
             let inventory = 0;
-            let weightedAvgPrice = 0;
-            let totalBought = 0;
-            let totalSold = 0;
+            let weightedAvgPrice = 0;        // for display (avg buy price of remaining)
+            
+            // For profit: queue of (amount, costPriceGhs)
+            let costQueue = [];               // FIFO queue for unsold USDT
+            let totalSellRevenue = 0;          // sum of fiat from sells
+            let totalCostOfSold = 0;            // sum of cost for sold USDT (using FIFO)
+            let totalSoldQty = 0;               // total USDT sold (for avg sell price)
 
             const processedRows = completedRows.map((r) => {
                 let type = r.type;
                 let coin = r.coin;
-                // if price missing, compute from fiat/coin
+                // price (GHS per USDT) – if missing compute from fiat/coin
                 let price = r.price > 0 ? r.price : (coin > 0 ? r.fiat / coin : 0);
 
                 if (type === 'BUY') {
+                    // update weighted average (for display)
                     if (inventory + coin > 0) {
                         weightedAvgPrice = ((inventory * weightedAvgPrice) + (coin * price)) / (inventory + coin);
                     } else {
                         weightedAvgPrice = price;
                     }
                     inventory += coin;
-                    totalBought += coin;
+                    // add to FIFO queue: each USDT unit has cost = price
+                    costQueue.push({ amount: coin, cost: price });
+
                 } else if (type === 'SELL') {
-                    // sell only if inventory sufficient? we allow but will show warning later if negative (shouldn't happen with completed only)
-                    inventory -= coin;
-                    totalSold += coin;
-                    // avg price unchanged
+                    // Record revenue
+                    let sellQty = coin;
+                    let sellRevenue = sellQty * price;   // fiat obtained
+                    totalSellRevenue += sellRevenue;
+                    totalSoldQty += sellQty;
+
+                    // FIFO cost deduction
+                    let remainingToSell = sellQty;
+                    while (remainingToSell > 0.000001 && costQueue.length > 0) {
+                        let oldest = costQueue[0];
+                        let taken = Math.min(oldest.amount, remainingToSell);
+                        totalCostOfSold += taken * oldest.cost;
+                        oldest.amount -= taken;
+                        if (oldest.amount < 0.000001) costQueue.shift(); // remove fully used lot
+                        remainingToSell -= taken;
+                    }
+                    // if remainingToSell > 0 (sold more than bought) – shouldn't happen with completed-only, but just in case
+                    // we won't assign cost for excess (treated as zero cost to avoid negative profit spike)
+                    if (remainingToSell > 0.000001) {
+                        // This means we sold USDT that wasn't bought in period – treat cost as 0? or current avg? we'll use 0 to be safe (profit higher, but flagged)
+                        console.warn("Sold more than bought in period, excess has zero cost");
+                    }
+
+                    // update inventory display (same as before)
+                    inventory -= sellQty;
+                    // weightedAvgPrice unchanged for display (still avg of remaining)
                 }
 
                 return {
@@ -463,17 +500,20 @@
             // final numbers
             const finalInventory = processedRows.length > 0 ? processedRows[processedRows.length-1].processedInventory : 0;
             const finalAvg = processedRows.length > 0 ? processedRows[processedRows.length-1].processedAvg : 0;
-            const costBasis = finalAvg * finalInventory;
-            const netFlow = totalBought - totalSold;
+            
+            // average sell price (if any sells)
+            const avgSellPrice = totalSoldQty > 0.0001 ? totalSellRevenue / totalSoldQty : 0;
+            // profit = total sell revenue − cost of those sold USDT (FIFO)
+            const profit = totalSellRevenue - totalCostOfSold;
 
             return {
                 processedRows,
-                totalBought,
-                totalSold,
+                totalBought: completedRows.filter(r => r.type === 'BUY').reduce((acc, r) => acc + r.coin, 0),
+                totalSold: totalSoldQty,
+                avgSellPrice,
+                profit,
                 finalInventory,
                 finalAvg,
-                costBasis,
-                netFlow,
                 startCut,
                 endCut
             };
@@ -491,11 +531,11 @@
                 tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px;">📭 No COMPLETED trades between selected dates.</td></tr>`;
                 totalBoughtEl.innerText = '0.00';
                 totalSoldEl.innerText = '0.00';
+                avgSellPriceEl.innerText = '0.00';
+                profitEstEl.innerText = '0.00';
                 remainingInvEl.innerText = '0.00';
                 avgPriceEl.innerText = '0.00';
-                costBasisEl.innerText = '0.00';
-                netFlowEl.innerText = '0.00';
-                periodBadge.innerText = '⚠️ no completed trades';
+                profitBadge.innerText = '⚠️ no completed trades';
                 return;
             }
 
@@ -524,17 +564,18 @@
             // summary cards
             totalBoughtEl.innerText = result.totalBought.toFixed(4);
             totalSoldEl.innerText = result.totalSold.toFixed(4);
+            avgSellPriceEl.innerText = result.avgSellPrice.toFixed(2);
+            let profit = result.profit;
+            profitEstEl.innerHTML = profit.toFixed(2);
+            profitEstEl.className = profit >= 0 ? 'stat-value profit-positive' : 'stat-value profit-negative';
             remainingInvEl.innerText = result.finalInventory.toFixed(4);
             avgPriceEl.innerText = result.finalAvg.toFixed(2);
-            costBasisEl.innerText = result.costBasis.toFixed(2);
-            netFlowEl.innerText = result.netFlow.toFixed(4);
 
             if (result.finalInventory < -0.0001) {
-                periodBadge.innerText = '❌ NEGATIVE (should never happen with completed-only)';
-            } else if (result.finalInventory === 0) {
-                periodBadge.innerText = '🟡 zero inventory at period end';
+                profitBadge.innerText = '❌ NEGATIVE inventory (odd)';
             } else {
-                periodBadge.innerText = `✅ final inventory: ${result.finalInventory.toFixed(4)} USDT`;
+                let badgeText = `📈 Profit: ${profit.toFixed(2)} GHS  |  Avg sell: ${result.avgSellPrice.toFixed(2)} GHS`;
+                profitBadge.innerText = badgeText;
             }
         }
 
@@ -557,7 +598,7 @@
 
             try {
                 analyzeBtn.disabled = true;
-                periodBadge.innerText = '⏳ parsing...';
+                profitBadge.innerText = '⏳ calculating...';
                 const fileData = await loadFile(file);
                 if (!fileData || fileData.length === 0) {
                     alert('No data found.');
